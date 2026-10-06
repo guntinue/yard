@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="야드계산">
+<title>원단 야드 계산기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E9EDF1; --surface:#FFFFFF; --ink:#1C2733; --muted:#6B7785; --line:#D3DAE1;
+  --indigo:#2D4A6B; --indigo-ink:#FFFFFF; --thread:#D9A21B; --dim:#B8C1CA;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141A21; --surface:#1E2630; --ink:#E7ECF1; --muted:#93A0AE; --line:#2F3A46;
+    --indigo:#7FA3CC; --indigo-ink:#0E1620; --thread:#E8B53A; --dim:#4A5664;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141A21; --surface:#1E2630; --ink:#E7ECF1; --muted:#93A0AE; --line:#2F3A46;
+  --indigo:#7FA3CC; --indigo-ink:#0E1620; --thread:#E8B53A; --dim:#4A5664;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"IBM Plex Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:440px;margin:0 auto;padding:12px 16px 28px}
+
+/* result */
+.result{
+  position:sticky; top:env(safe-area-inset-top,0px); z-index:5;
+  background:var(--indigo); color:var(--indigo-ink);
+  border-radius:0 0 18px 18px; margin:-12px -16px 18px; padding:18px 20px 16px;
+}
+.result-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.yard{font-size:64px;font-weight:700;line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.yard small{font-size:24px;font-weight:500;margin-left:4px;opacity:.85}
+.yard.empty{opacity:.45}
+.widths{font-size:15px;text-align:right;opacity:.9}
+.widths b{font-size:26px;font-weight:700;display:block;line-height:1.1}
+.formula{
+  margin-top:10px;padding-top:10px;font-size:13px;opacity:.85;
+  border-top:2px dashed var(--thread);
+  font-variant-numeric:tabular-nums;min-height:1.4em;
+}
+
+/* fields */
+.field{margin-bottom:16px}
+.field.off{opacity:.4}
+.label{display:flex;justify-content:space-between;font-size:14px;font-weight:500;margin-bottom:6px}
+.label span{color:var(--muted);font-weight:400;font-size:12px}
+.seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button{
+  flex:1;border:0;background:transparent;color:var(--ink);
+  font:inherit;font-size:16px;font-weight:500;padding:11px 4px;border-radius:9px;cursor:pointer;
+}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.seg button:focus-visible{outline:2px solid var(--thread);outline-offset:1px}
+.field.off .seg button{pointer-events:none}
+
+.nums{display:block}
+.num{
+  display:flex;align-items:center;background:var(--surface);
+  border:1px solid var(--line);border-radius:12px;padding:0 12px;
+}
+.num:focus-within{border-color:var(--ink)}
+.num input{
+  flex:1;min-width:0;border:0;background:transparent;color:var(--ink);
+  font:inherit;font-size:24px;font-weight:700;padding:12px 0;outline:none;
+  font-variant-numeric:tabular-nums;
+}
+.num em{font-style:normal;color:var(--muted);font-size:14px}
+.field.off .num input{pointer-events:none}
+
+.clear{
+  width:100%;margin-top:6px;padding:13px;border-radius:12px;
+  border:1px solid var(--line);background:transparent;color:var(--muted);
+  font:inherit;font-size:15px;cursor:pointer;
+}
+.note{font-size:12px;color:var(--muted);line-height:1.6;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section class="result" aria-live="polite">
+    <div class="result-top">
+      <div class="yard empty" id="yard">0.0<small>Y</small></div>
+      <div class="widths" id="widthsBox" hidden>폭수<b id="widths">-</b></div>
+    </div>
+    <div class="formula" id="formula">폭을 입력하세요</div>
+  </section>
+
+  <div class="field">
+    <div class="label">구분</div>
+    <div class="seg" data-key="type">
+      <button data-v="소폭">소폭</button>
+      <button data-v="대폭">대폭</button>
+      <button data-v="대폭겉지">대폭겉지</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <div class="label">주름 <span>나비 ×2 · 평식 ×1.5</span></div>
+    <div class="seg" data-key="fold">
+      <button data-v="나비">나비</button>
+      <button data-v="평식">평식</button>
+    </div>
+  </div>
+
+  <div class="field" id="fShape">
+    <div class="label">형상 <span>소폭만 · 하단시접 +5</span></div>
+    <div class="seg" data-key="shape">
+      <button data-v="O">있음</button>
+      <button data-v="X">없음</button>
+    </div>
+  </div>
+
+  <div class="field" id="fMake">
+    <div class="label">제작 <span>대폭만 · 1조 +40 / 1장 +20</span></div>
+    <div class="seg" data-key="make">
+      <button data-v="1조">1조</button>
+      <button data-v="1장">1장</button>
+    </div>
+  </div>
+
+  <div class="nums">
+    <div class="field">
+      <div class="label">폭</div>
+      <label class="num"><input id="w" type="text" inputmode="decimal" placeholder="0" autocomplete="off"><em>cm</em></label>
+    </div>
+    <div class="field" id="fHeight">
+      <div class="label">높이 <span>소폭만</span></div>
+      <label class="num"><input id="h" type="text" inputmode="decimal" placeholder="0" autocomplete="off"><em>cm</em></label>
+    </div>
+  </div>
+
+  <button class="clear" id="clear">폭·높이 지우기</button>
+
+  <p class="note">
+    대폭: (폭 × 배수 + 시접) ÷ 91.44<br>
+    소폭: 폭수 × (높이 + 하단시접 30, 형상 시 35) ÷ 91.44<br>
+    소폭 폭수: 폭 × 배수 ÷ 140, 소수 첫째자리 3 이상이면 올림<br>
+    야드는 반올림 없이 소수 첫째자리까지 표시
+  </p>
+</div>
+
+<script>
+const CFG = { yard:91.44, mult:{나비:2, 평식:1.5}, seam:{"1조":40, "1장":20},
+              smallWidth:140, hem:30, shapeHem:5, roundAt:3 };
+const state = { type:"대폭", fold:"나비", shape:"O", make:"1조" };
+
+try {
+  const saved = JSON.parse(localStorage.getItem("yardcalc") || "null");
+  if (saved) Object.assign(state, saved);
+} catch(e) {}
+
+const $ = id => document.getElementById(id);
+const num = v => { const n = parseFloat(String(v).replace(/,/g,"")); return isFinite(n) && n > 0 ? n : null; };
+const trunc1 = v => Math.floor(v * 10 + 1e-9) / 10;
+const fmt = v => Number(v.toFixed(2)).toString();
+
+function calc(){
+  const small = state.type === "소폭";
+  $("fShape").classList.toggle("off", !small);
+  $("fHeight").classList.toggle("off", !small);
+  $("fMake").classList.toggle("off", small);
+  $("widthsBox").hidden = !small;
+
+  const w = num($("w").value), h = num($("h").value);
+  const m = CFG.mult[state.fold];
+  let y = null, f = "폭을 입력하세요";
+
+  if (w && !small){
+    const s = CFG.seam[state.make];
+    y = trunc1((w * m + s) / CFG.yard);
+    f = `(${fmt(w)} × ${m} + ${s}) ÷ 91.44`;
+  } else if (w && small){
+    const raw = w * m / CFG.smallWidth;
+    const base = Math.floor(raw + 1e-9);
+    const digit = Math.floor(raw * 10 + 1e-9) % 10;
+    const widths = Math.max(1, digit >= CFG.roundAt ? base + 1 : base);
+    $("widths").textContent = widths;
+    const hem = CFG.hem + (state.shape === "O" ? CFG.shapeHem : 0);
+    if (h){
+      y = trunc1(widths * (h + hem) / CFG.yard);
+      f = `${widths}폭 × (${fmt(h)} + ${hem}) ÷ 91.44  ·  폭 계산 ${raw.toFixed(2)}`;
+    } else {
+      f = `폭 계산 ${raw.toFixed(2)} → ${widths}폭 · 높이를 입력하세요`;
+    }
+  }
+  if (!w && small) $("widths").textContent = "-";
+
+  const el = $("yard");
+  el.innerHTML = (y === null ? "0.0" : y.toFixed(1)) + "<small>Y</small>";
+  el.classList.toggle("empty", y === null);
+  $("formula").textContent = f;
+}
+
+document.querySelectorAll(".seg").forEach(seg => {
+  const key = seg.dataset.key;
+  const paint = () => seg.querySelectorAll("button").forEach(b =>
+    b.setAttribute("aria-pressed", b.dataset.v === state[key]));
+  seg.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    state[key] = b.dataset.v; paint(); calc();
+    try { localStorage.setItem("yardcalc", JSON.stringify(state)); } catch(e) {}
+  });
+  paint();
+});
+["w","h"].forEach(id => $(id).addEventListener("input", calc));
+$("clear").addEventListener("click", () => { $("w").value = ""; $("h").value = ""; calc(); $("w").focus(); });
+calc();
+</script>
+</body>
+</html>
