@@ -83,6 +83,9 @@ body{
 }
 .num em{font-style:normal;color:var(--muted);font-size:14px}
 .field.off .num input{pointer-events:none}
+.num .unit{flex:0 0 auto;margin:6px -6px 6px 8px;padding:3px;border-radius:10px;background:var(--bg);border:0}
+.num .unit button{font-size:15px;padding:8px 14px;border-radius:8px}
+[hidden]{display:none !important}
 
 .clear{
   width:100%;margin-top:6px;padding:13px;border-radius:12px;
@@ -100,7 +103,7 @@ body{
       <div class="yard empty" id="yard">0.00<small>Y</small></div>
       <div class="widths" id="widthsBox" hidden>폭수<b id="widths">-</b></div>
     </div>
-    <div class="formula" id="formula">폭을 입력하세요</div>
+    <div class="formula" id="formula">가로를 입력하세요</div>
   </section>
 
   <div class="field">
@@ -138,8 +141,15 @@ body{
 
   <div class="nums">
     <div class="field">
-      <div class="label">폭</div>
-      <label class="num"><input id="w" type="text" inputmode="decimal" placeholder="0" autocomplete="off"><em>cm</em></label>
+      <div class="label">가로 <span id="wHint">소폭은 단위 선택</span></div>
+      <div class="num">
+        <input id="w" type="text" inputmode="decimal" placeholder="0" autocomplete="off">
+        <em id="wUnit">cm</em>
+        <div class="seg unit" data-key="unit" id="unitSeg">
+          <button data-v="cm">cm</button>
+          <button data-v="폭">폭</button>
+        </div>
+      </div>
     </div>
     <div class="field" id="fHeight">
       <div class="label">높이 <span>소폭만</span></div>
@@ -147,12 +157,13 @@ body{
     </div>
   </div>
 
-  <button class="clear" id="clear">폭·높이 지우기</button>
+  <button class="clear" id="clear">가로·높이 지우기</button>
 
   <p class="note">
-    대폭: (폭 × 배수 + 시접) ÷ 91.44<br>
+    대폭: (가로 × 배수 + 시접) ÷ 91.44<br>
     소폭: 폭수 × (높이 + 하단시접 30, 형상 시 35) ÷ 91.44<br>
-    소폭 폭수: 폭 × 배수 ÷ 140, 소수 첫째자리 3 이상이면 올림<br>
+    소폭 폭수: 가로 × 배수 ÷ 140, 소수 첫째자리 3 이상이면 올림<br>
+    소폭 가로 단위를 '폭'으로 고르면 입력한 폭수로 바로 계산<br>
     야드는 반올림 없이 소수 둘째자리까지 표시
   </p>
 </div>
@@ -160,7 +171,7 @@ body{
 <script>
 const CFG = { yard:91.44, mult:{나비:2, 평식:1.5}, seam:{"1조":40, "1장":20},
               smallWidth:140, hem:30, shapeHem:5, roundAt:3 };
-const state = { type:"대폭", fold:"나비", shape:"O", make:"1조" };
+const state = { type:"대폭", fold:"나비", shape:"O", make:"1조", unit:"cm" };
 
 try {
   const saved = JSON.parse(localStorage.getItem("yardcalc") || "null");
@@ -181,14 +192,18 @@ function calc(){
 
   const w = num($("w").value), h = num($("h").value);
   const m = CFG.mult[state.fold];
-  let y = null, f = "폭을 입력하세요";
+  let y = null, f = "가로를 입력하세요";
+  $("wHint").hidden = !small;
+  $("unitSeg").hidden = !small;
+  $("wUnit").hidden = small;
 
   if (w && !small){
     const s = CFG.seam[state.make];
     y = trunc2((w * m + s) / CFG.yard);
     f = `(${fmt(w)} × ${m} + ${s}) ÷ 91.44`;
   } else if (w && small){
-    const raw = w * m / CFG.smallWidth;
+    const direct = state.unit === "폭";
+    const raw = direct ? w : w * m / CFG.smallWidth;
     const base = Math.floor(raw + 1e-9);
     const digit = Math.floor(raw * 10 + 1e-9) % 10;
     const widths = Math.max(1, digit >= CFG.roundAt ? base + 1 : base);
@@ -196,9 +211,9 @@ function calc(){
     const hem = CFG.hem + (state.shape === "O" ? CFG.shapeHem : 0);
     if (h){
       y = trunc2(widths * (h + hem) / CFG.yard);
-      f = `${widths}폭 × (${fmt(h)} + ${hem}) ÷ 91.44  ·  폭 계산 ${raw.toFixed(2)}`;
+      f = `${widths}폭 × (${fmt(h)} + ${hem}) ÷ 91.44  ·  ` + (direct ? "폭수 직접 입력" : `폭 계산 ${raw.toFixed(2)}`);
     } else {
-      f = `폭 계산 ${raw.toFixed(2)} → ${widths}폭 · 높이를 입력하세요`;
+      f = (direct ? `${widths}폭 직접 입력` : `폭 계산 ${raw.toFixed(2)} → ${widths}폭`) + " · 높이를 입력하세요";
     }
   }
   if (!w && small) $("widths").textContent = "-";
