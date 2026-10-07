@@ -45,7 +45,7 @@ body{
   border-radius:0 0 18px 18px; margin:-12px -16px 18px; padding:18px 20px 16px;
 }
 .result-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
-.yard{font-size:64px;font-weight:700;line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.yard{font-size:56px;font-weight:700;line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums}
 .yard small{font-size:24px;font-weight:500;margin-left:4px;opacity:.85}
 .yard.empty{opacity:.45}
 .widths{font-size:15px;text-align:right;opacity:.9}
@@ -97,7 +97,7 @@ body{
 
   <section class="result" aria-live="polite">
     <div class="result-top">
-      <div class="yard empty" id="yard">0.0<small>Y</small></div>
+      <div class="yard empty" id="yard">0.00<small>Y</small></div>
       <div class="widths" id="widthsBox" hidden>폭수<b id="widths">-</b></div>
     </div>
     <div class="formula" id="formula">폭을 입력하세요</div>
@@ -153,7 +153,7 @@ body{
     대폭: (폭 × 배수 + 시접) ÷ 91.44<br>
     소폭: 폭수 × (높이 + 하단시접 30, 형상 시 35) ÷ 91.44<br>
     소폭 폭수: 폭 × 배수 ÷ 140, 소수 첫째자리 3 이상이면 올림<br>
-    야드는 반올림 없이 소수 첫째자리까지 표시
+    야드는 반올림 없이 소수 둘째자리까지 표시
   </p>
 </div>
 
@@ -169,7 +169,7 @@ try {
 
 const $ = id => document.getElementById(id);
 const num = v => { const n = parseFloat(String(v).replace(/,/g,"")); return isFinite(n) && n > 0 ? n : null; };
-const trunc1 = v => Math.floor(v * 10 + 1e-9) / 10;
+const trunc2 = v => Math.floor(v * 100 + 1e-9) / 100;
 const fmt = v => Number(v.toFixed(2)).toString();
 
 function calc(){
@@ -185,7 +185,7 @@ function calc(){
 
   if (w && !small){
     const s = CFG.seam[state.make];
-    y = trunc1((w * m + s) / CFG.yard);
+    y = trunc2((w * m + s) / CFG.yard);
     f = `(${fmt(w)} × ${m} + ${s}) ÷ 91.44`;
   } else if (w && small){
     const raw = w * m / CFG.smallWidth;
@@ -195,7 +195,7 @@ function calc(){
     $("widths").textContent = widths;
     const hem = CFG.hem + (state.shape === "O" ? CFG.shapeHem : 0);
     if (h){
-      y = trunc1(widths * (h + hem) / CFG.yard);
+      y = trunc2(widths * (h + hem) / CFG.yard);
       f = `${widths}폭 × (${fmt(h)} + ${hem}) ÷ 91.44  ·  폭 계산 ${raw.toFixed(2)}`;
     } else {
       f = `폭 계산 ${raw.toFixed(2)} → ${widths}폭 · 높이를 입력하세요`;
@@ -204,7 +204,7 @@ function calc(){
   if (!w && small) $("widths").textContent = "-";
 
   const el = $("yard");
-  el.innerHTML = (y === null ? "0.0" : y.toFixed(1)) + "<small>Y</small>";
+  el.innerHTML = (y === null ? "0.00" : y.toFixed(2)) + "<small>Y</small>";
   el.classList.toggle("empty", y === null);
   $("formula").textContent = f;
 }
