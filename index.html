@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="야드계산">
-<title>원단 야드 계산기</title>
+<meta name="apple-mobile-web-app-title" content="IZI 야드계산">
+<title>IZI Fabric 원단 야드 계산기</title>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -44,6 +44,10 @@ body{
   background:var(--indigo); color:var(--indigo-ink);
   border-radius:0 0 18px 18px; margin:-12px -16px 18px; padding:18px 20px 16px;
 }
+.brand{font-size:13px;font-weight:700;letter-spacing:2px;color:var(--thread);margin-bottom:8px}
+.brand span{font-weight:500;letter-spacing:0;color:var(--indigo-ink);opacity:.75;margin-left:6px}
+.foot{margin-top:20px;padding-top:14px;border-top:1px solid var(--line);text-align:center;font-size:12px;color:var(--muted)}
+.foot b{color:var(--ink);letter-spacing:1px}
 .result-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .yard{font-size:56px;font-weight:700;line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums}
 .yard small{font-size:24px;font-weight:500;margin-left:4px;opacity:.85}
@@ -99,6 +103,7 @@ body{
 <div class="wrap">
 
   <section class="result" aria-live="polite">
+    <div class="brand">IZI Fabric <span>원단 야드 계산기</span></div>
     <div class="result-top">
       <div class="yard empty" id="yard">0.00<small>Y</small></div>
       <div class="widths" id="widthsBox" hidden>폭수<b id="widths">-</b></div>
@@ -166,6 +171,7 @@ body{
     소폭 가로 단위를 '폭'으로 고르면 입력한 폭수로 바로 계산<br>
     야드는 반올림 없이 소수 둘째자리까지 표시
   </p>
+  <div class="foot"><b>IZI Fabric</b> 에서 제공하는 계산기입니다</div>
 </div>
 
 <script>
