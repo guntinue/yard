@@ -218,7 +218,7 @@ function calc(){
       y = trunc2(widths * (h + hem) / CFG.yard);
       f = `${widths}폭 × (${fmt(h)} + ${hem}) ÷ 91.44  ·  ` + (direct ? "폭수 직접 입력" : `폭 계산 ${raw.toFixed(2)}`);
     } else {
-      f = (direct ? `${widths}폭 직접 입력` : `폭 계산 결과: ${raw.toFixed(2)} → ${widths}폭`) + " · 높이를 입력하세요";
+      f = (direct ? `${widths}폭 직접 입력` : `폭 계산 ${raw.toFixed(2)} → ${widths}폭`) + " · 높이를 입력하세요";
     }
   }
   if (!w && small) $("widths").textContent = "-";
