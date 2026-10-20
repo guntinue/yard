@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="IZI 야드계산">
-<title>IZI FABRIC 계산기</title>
+<title>IZI Fabric 원단 야드 계산기</title>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -90,6 +90,11 @@ body{
 .num .unit{flex:0 0 auto;margin:6px -6px 6px 8px;padding:3px;border-radius:10px;background:var(--bg);border:0}
 .num .unit button{font-size:15px;padding:8px 14px;border-radius:8px}
 [hidden]{display:none !important}
+.multRow{margin-top:8px}
+.multRow .chips{min-width:0}
+.multRow .chips button{font-size:15px;padding:9px 0;min-width:0}
+.multIn{min-width:0;padding:0 10px}
+.multIn input{width:100%;min-width:0;font-size:22px;padding:10px 8px;text-align:right}
 
 .clear{
   width:100%;margin-top:6px;padding:13px;border-radius:12px;
@@ -103,7 +108,7 @@ body{
 <div class="wrap">
 
   <section class="result" aria-live="polite">
-    <div class="brand">IZI FABRIC <span>원단 야드 계산기</span></div>
+    <div class="brand">IZI Fabric <span>원단 야드 계산기</span></div>
     <div class="result-top">
       <div class="yard empty" id="yard">0.00<small>Y</small></div>
       <div class="widths" id="widthsBox" hidden>폭수<b id="widths">-</b></div>
@@ -120,10 +125,13 @@ body{
   </div>
 
   <div class="field">
-    <div class="label">주름 <span>나비 ×2 · 평식 ×1.5</span></div>
+    <div class="label">주름 <span id="foldHint">나비 배수 입력 · 평식 ×1.5</span></div>
     <div class="seg" data-key="fold">
       <button data-v="나비">나비</button>
       <button data-v="평식">평식</button>
+    </div>
+    <div class="multRow" id="multRow">
+      <label class="num multIn"><em>나비 배수 ×</em><input id="mult" type="text" inputmode="decimal" autocomplete="off" placeholder="2"><em>배</em></label>
     </div>
   </div>
 
@@ -164,19 +172,20 @@ body{
   <button class="clear" id="clear">가로·높이 지우기</button>
 
   <p class="note">
+    나비 배수는 기본 2배, 직접 입력 가능 (비우면 2배)<br>
     대폭: (가로 × 배수 + 시접) ÷ 91.44<br>
     소폭: 폭수 × (높이 + 하단시접 30, 형상 시 35) ÷ 91.44<br>
     소폭 폭수: 가로 × 배수 ÷ 140, 소수 첫째자리 3 이상이면 올림<br>
     소폭 가로 단위를 '폭'으로 고르면 입력한 폭수로 바로 계산<br>
     야드는 반올림 없이 소수 둘째자리까지 표시
   </p>
-  <div class="foot"><b>IZI FABRIC</b> 에서 제공하는 계산기입니다</div>
+  <div class="foot"><b>IZI Fabric</b> 에서 제공하는 계산기입니다</div>
 </div>
 
 <script>
 const CFG = { yard:91.44, mult:{나비:2, 평식:1.5}, seam:{"1조":40, "1장":20},
               smallWidth:140, hem:30, shapeHem:5, roundAt:3 };
-const state = { type:"대폭", fold:"나비", shape:"O", make:"1조", unit:"cm" };
+const state = { type:"대폭", fold:"나비", shape:"O", make:"1조", unit:"cm", mult:2 };
 
 try {
   const saved = JSON.parse(localStorage.getItem("yardcalc") || "null");
@@ -196,7 +205,8 @@ function calc(){
   $("widthsBox").hidden = !small;
 
   const w = num($("w").value), h = num($("h").value);
-  const m = CFG.mult[state.fold];
+  $("multRow").hidden = state.fold !== "나비";
+  const m = state.fold === "나비" ? state.mult : CFG.mult.평식;
   let y = null, f = "가로를 입력하세요";
   $("wHint").hidden = !small;
   $("unitSeg").hidden = !small;
@@ -216,9 +226,9 @@ function calc(){
     const hem = CFG.hem + (state.shape === "O" ? CFG.shapeHem : 0);
     if (h){
       y = trunc2(widths * (h + hem) / CFG.yard);
-      f = `${widths}폭 × (${fmt(h)} + ${hem}) ÷ 91.44  ·  ` + (direct ? "폭수 직접 입력" : `폭 계산 값: ${raw.toFixed(2)}`);
+      f = `${widths}폭 × (${fmt(h)} + ${hem}) ÷ 91.44  ·  ` + (direct ? "폭수 직접 입력" : `폭 계산 ${raw.toFixed(2)}`);
     } else {
-      f = (direct ? `${widths}폭 직접 입력` : `폭 계산 값: ${raw.toFixed(2)} → ${widths}폭`) + " · 높이를 입력하세요";
+      f = (direct ? `${widths}폭 직접 입력` : `폭 계산 ${raw.toFixed(2)} → ${widths}폭`) + " · 높이를 입력하세요";
     }
   }
   if (!w && small) $("widths").textContent = "-";
@@ -240,6 +250,18 @@ document.querySelectorAll(".seg").forEach(seg => {
   });
   paint();
 });
+const save = () => { try { localStorage.setItem("yardcalc", JSON.stringify(state)); } catch(e) {} };
+function paintMult(){
+
+}
+if (!(state.mult > 0)) state.mult = 2;
+if (state.type === "대폭겉지") state.type = "대폭";
+$("mult").value = state.mult;
+$("mult").addEventListener("input", () => {
+  state.mult = num($("mult").value) || CFG.mult.나비;
+  paintMult(); calc(); save();
+});
+paintMult();
 ["w","h"].forEach(id => $(id).addEventListener("input", calc));
 $("clear").addEventListener("click", () => { $("w").value = ""; $("h").value = ""; calc(); $("w").focus(); });
 calc();
