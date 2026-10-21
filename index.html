@@ -254,7 +254,7 @@ const save = () => { try { localStorage.setItem("yardcalc", JSON.stringify(state
 function paintMult(){
 
 }
-if (!(state.mult > 0)) state.mult = 2;
+state.mult = CFG.mult.나비;   // 열 때마다 기본 2배
 if (state.type === "대폭겉지") state.type = "대폭";
 $("mult").value = state.mult;
 $("mult").addEventListener("input", () => {
